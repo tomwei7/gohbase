@@ -182,6 +182,23 @@ func TestScanner(t *testing.T) {
 	if d := atest.Diff(expected, rs); d != "" {
 		t.Fatal(d)
 	}
+
+	s, err = hrpc.NewScanRange(scan.Context(), table, []byte("foo"), nil,
+		hrpc.NumberOfRows(2))
+	if err != nil {
+		t.Fatal(err)
+	}
+	c.EXPECT().SendRPC(&scanMatcher{scan: s}).Do(func(rpc hrpc.Call) {
+		rpc.SetRegion(region3)
+	}).Return(&pb.ScanResponse{
+		ScannerId:   cp(scannerID),
+		Results:     dup(resultsPB[3:4]),
+		MoreResults: proto.Bool(false),
+	}, nil).Times(1)
+	scanner.Next()
+	if scanner.Close() != nil {
+		t.Fatal(err)
+	}
 }
 
 var cells = []*pb.Cell{

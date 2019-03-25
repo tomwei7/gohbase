@@ -30,17 +30,19 @@ type scanner struct {
 	// scannerID is the id of scanner on current region
 	scannerID uint64
 	// startRow is the start row in the current region
-	startRow []byte
-	results  []*pb.Result
-	closed   bool
+	startRow     []byte
+	results      []*pb.Result
+	closed       bool
+	manualClosed bool
 }
 
 func (s *scanner) Close() error {
-	if s.closed {
+	if s.manualClosed {
 		return errors.New("scanner has already been closed")
 	}
-	s.closed = true
-	if s.scannerID != noScannerID {
+	s.manualClosed = true
+	if !s.closed && s.scannerID != noScannerID {
+		s.closed = true
 		go func() {
 			// if we are closing in the middle of scanning a region,
 			// send a close scanner request
